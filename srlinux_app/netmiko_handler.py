@@ -1,16 +1,25 @@
 from netmiko import ConnectHandler
 
-def get_device_interfaces(host, username, password):
+def get_device_interfaces(ip, username, password):
     device = {
-        'device_type': 'nokia_srl',
-        'host': host,
-        'username': username,
-        'password': password,
+        "device_type": "nokia_srl",
+        "host": "172.20.20.3",
+        "username": "admin",
+        "password": "NokiaSrl1!",
+        "timeout": 60,  # connection timeout
     }
+
     try:
+        # Connect to the device
+        # Establish SSH connection
         connection = ConnectHandler(**device)
-        output = connection.send_command('show interfaces')
+        # Increase the read_timeout after connection is established
+        connection.read_timeout = 240  # Adjust as needed
+        # Execute the command
+        output = connection.send_command("show interface")
+        # Close the connection
         connection.disconnect()
         return output
+
     except Exception as e:
-        return f"Error: {str(e)}"
+        return f"Error connecting to device: {str(e)}"
