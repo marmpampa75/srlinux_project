@@ -5,45 +5,106 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Device List</title>
     <style>
-        table {
-            width: 80%;
-            margin: 20px auto;
-            border-collapse: collapse;
-        }
-        th, td {
-            border: 1px solid #ccc;
-            padding: 10px;
-            text-align: left;
-        }
-        th {
-            background-color: #f4f4f4;
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+            text-align: center;
         }
         h1 {
-            text-align: center;
+            margin-top: 20px;
+            color: #333;
+        }
+        table {
+            width: 50%;  /* Reduced table width */
+            margin: 20px auto;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+            width: 50%; /* Set equal width for both columns */
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        a {
+            text-decoration: none;
+            color: #007bff;
+            font-weight: bold;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .container {
+            padding: 20px;
+        }
+        .greeting {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #007bff;  /* Blue color to match header */
+        }
+        .exit-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .exit-button:hover {
+            background-color: #0056b3; /* Darker blue on hover */
         }
     </style>
 </head>
 <body>
-    <h1>Device List</h1>
-    <table>
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>IP Address</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for device in devices %}
-            <tr>
-                <td>{{ device.name }}</td>
-                <td>{{ device.ip_address }}</td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="2">No devices found</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="greeting">
+        Hello, {{ user.username }}
+    </div>
+    <div class="exit-button">
+        <a href="{% url 'logout_confirmation' %}" style="color: white; text-decoration: none;">Exit</a>
+    </div>
+    <div class="container">
+        <h1>Device List</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 40%;">Name</th>
+                    <th style="width: 60%;">IP Address</th> 
+                </tr>
+            </thead>
+            <tbody>
+                {% for device in devices %}
+                <tr>
+                    <td>
+                        <a href="{% url 'device_interfaces' device.id %}">{{ device.name }}</a>
+                    </td>
+                    <td>{{ device.ip_address }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="2">No devices found</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </body>
 </html>

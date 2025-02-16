@@ -3,9 +3,9 @@ from netmiko import ConnectHandler
 def get_device_interfaces(ip, username, password):
     device = {
         "device_type": "nokia_srl",
-        "host": "172.20.20.3",
-        "username": "admin",
-        "password": "NokiaSrl1!",
+        "host": ip,
+        "username": username,
+        "password": password,
         "timeout": 60,  # connection timeout
     }
 

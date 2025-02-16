@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logout Confirmation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        h1 {
+            color: #333;
+            margin-top: 50px;
+        }
+        .container {
+            padding: 20px;
+        }
+        .button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 10px;
+            text-decoration: none;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+        /* New approach to adjust spacing */
+        .cancel-button {
+            margin-top: 40px; /* Increase the margin-top for more distance */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Are you sure you want to log out?</h1>
+        <a href="{% url 'logout_confirmed' %}" class="button">Yes, Log me out</a>
+        <a href="{% url 'device_list' %}" class="button cancel-button">No, Cancel</a>
+    </div>
+</body>
+</html>
