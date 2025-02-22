@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
     {% load static %}
-    <link rel="icon" type="image/png" href="{% static 'favicon.ico' %}"> 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>  <!-- Chart.js -->
+    <link rel="icon" type="image/png" href="{% static 'favicon.ico' %}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Device List</title>
@@ -19,7 +20,7 @@
             color: #333;
         }
         table {
-            width: 50%;  /* Reduced table width */
+            width: 50%;
             margin: 20px auto;
             border-collapse: collapse;
             background: white;
@@ -31,7 +32,7 @@
             border: 1px solid #ddd;
             padding: 10px;
             text-align: left;
-            width: 50%; /* Set equal width for both columns */
+            width: 50%;
         }
         th {
             background-color: #007bff;
@@ -57,7 +58,7 @@
             left: 20px;
             font-size: 16px;
             font-weight: bold;
-            color: #007bff;  /* Blue color to match header */
+            color: #007bff;
         }
         .exit-button {
             position: absolute;
@@ -72,7 +73,22 @@
             font-size: 14px;
         }
         .exit-button:hover {
-            background-color: #0056b3; /* Darker blue on hover */
+            background-color: #0056b3;
+        }
+        .docker-output {
+            background-color: #f4f4f4;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            text-align: left;
+            max-width: 80%;
+            margin: 20px auto;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        canvas {
+            max-width: 80%;
+            margin: 20px auto;
         }
     </style>
 </head>
@@ -83,13 +99,14 @@
     <div class="exit-button">
         <a href="{% url 'logout_confirmation' %}" style="color: white; text-decoration: none;">Exit</a>
     </div>
+
     <div class="container">
         <h1>Device List</h1>
         <table>
             <thead>
                 <tr>
                     <th style="width: 40%;">Name</th>
-                    <th style="width: 60%;">IP Address</th> 
+                    <th style="width: 60%;">IP Address</th>
                 </tr>
             </thead>
             <tbody>
@@ -107,6 +124,49 @@
                 {% endfor %}
             </tbody>
         </table>
+
+        <h2>Device Uptime (Seconds)</h2>
+        <canvas id="uptimeChart"></canvas>
     </div>
+
+    <script>
+        var ctx = document.getElementById('uptimeChart').getContext('2d');
+        var uptimeChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Uptime (seconds)',
+                    data: [],
+                    backgroundColor: 'rgba(0, 123, 255, 0.5)',
+                    borderColor: 'rgba(0, 123, 255, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        function updateChart() {
+            fetch("{% url 'get_device_uptime' %}")  // Call Django view for uptime
+                .then(response => response.json())
+                .then(data => {
+                    uptimeChart.data.labels = Object.keys(data);
+                    uptimeChart.data.datasets[0].data = Object.values(data);
+                    uptimeChart.update();
+                })
+                .catch(error => console.error("Error fetching uptime:", error));
+        }
+
+        updateChart();  // Initial load
+        setInterval(updateChart, 5000);  // Update every 5 seconds
+    </script>
+
 </body>
 </html>

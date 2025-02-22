@@ -7,6 +7,8 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth import logout
 import os
 import subprocess
+import json
+from django.http import JsonResponse
 
 def run_containerlab():
     try:
@@ -19,6 +21,15 @@ def run_containerlab():
 
 def device_list(request):
     devices = Device.objects.all()
+    # Run "docker ps -a" command
+    #try:
+    #    print(f"cd clab-quickstart/")  # Debugging
+    #    os.chdir('/root/clab-quickstart')  # Change directory
+    #    print(f"docker ps -a")  # Debugging
+    #    docker_output = subprocess.check_output(["docker", "ps", "-a"], text=True)
+    #except subprocess.CalledProcessError as e:
+    #    docker_output = f"Error executing command: {e}"
+
     return render(request, 'device_list.html', {'devices': devices})
 
 def add_device(request):
@@ -69,3 +80,26 @@ def logout_confirmed(request):
     logout(request)
     return redirect('login')  # Redirect the user to the login page after logging out
 
+def get_device_uptime(request):
+    devices = Device.objects.all()
+    uptime_data = {}
+
+    for device in devices:
+        try:
+            # Run 'docker inspect' to get uptime for the container
+            output = subprocess.check_output(
+                ["docker", "inspect", "-f", "{{.State.StartedAt}}", device.name],
+                text=True
+            ).strip()
+
+            # Convert timestamp to seconds (example handling)
+            from datetime import datetime
+            started_at = datetime.strptime(output[:19], "%Y-%m-%dT%H:%M:%S")
+            uptime_seconds = (datetime.utcnow() - started_at).total_seconds()
+
+            uptime_data[device.name] = int(uptime_seconds)
+        
+        except subprocess.CalledProcessError:
+            uptime_data[device.name] = 0  # If the device is not running, uptime is 0
+
+    return JsonResponse(uptime_data)
