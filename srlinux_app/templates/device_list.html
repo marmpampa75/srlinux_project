@@ -37,6 +37,10 @@
         th {
             background-color: #007bff;
             color: white;
+            cursor: pointer;
+        }
+        th:hover {
+            background-color: #0056b3;
         }
         tr:hover {
             background-color: #f1f1f1;
@@ -102,11 +106,11 @@
 
     <div class="container">
         <h1>Device List</h1>
-        <table>
+        <table id="deviceTable">
             <thead>
                 <tr>
-                    <th style="width: 40%;">Name</th>
-                    <th style="width: 60%;">IP Address</th>
+                    <th onclick="sortTable(0)">Name &#9650;&#9660;</th>
+                    <th onclick="sortTable(1)">IP Address &#9650;&#9660;</th>
                 </tr>
             </thead>
             <tbody>
@@ -130,6 +134,33 @@
     </div>
 
     <script>
+        function sortTable(columnIndex) {
+            var table = document.getElementById("deviceTable");
+            var tbody = table.querySelector("tbody");
+            var rows = Array.from(tbody.rows);
+            var isAscending = table.getAttribute("data-sort") === "asc";
+
+            rows.sort((rowA, rowB) => {
+                let cellA = rowA.cells[columnIndex].textContent.trim().toLowerCase();
+                let cellB = rowB.cells[columnIndex].textContent.trim().toLowerCase();
+
+                if (columnIndex === 1) {  // Sort IPs numerically
+                    cellA = cellA.split('.').map(Number);
+                    cellB = cellB.split('.').map(Number);
+                    for (let i = 0; i < cellA.length; i++) {
+                        if (cellA[i] !== cellB[i]) {
+                            return isAscending ? cellA[i] - cellB[i] : cellB[i] - cellA[i];
+                        }
+                    }
+                    return 0;
+                } 
+                return isAscending ? cellA.localeCompare(cellB) : cellB.localeCompare(cellA);
+            });
+
+            rows.forEach(row => tbody.appendChild(row)); // Reorder table
+            table.setAttribute("data-sort", isAscending ? "desc" : "asc"); // Toggle sort direction
+        }
+
         var ctx = document.getElementById('uptimeChart').getContext('2d');
         var uptimeChart = new Chart(ctx, {
             type: 'bar',

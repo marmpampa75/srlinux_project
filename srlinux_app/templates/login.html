@@ -14,9 +14,26 @@
             margin: 0;
             padding: 0;
         }
+        .title {
+        font-size: 36px;
+        font-weight: bold;
+        background: linear-gradient(45deg, #007bff, #ffffff);
+        
+        /* Standard property */
+        background-clip: text;
+        
+        /* Vendor prefixes for compatibility */
+        -webkit-background-clip: text; /* Chrome, Safari */
+        -moz-background-clip: text;    /* Firefox */
+        -o-background-clip: text;      /* Opera */
+        
+        -webkit-text-fill-color: transparent;
+        margin-top: 50px;
+        animation: fadeIn 5s ease-in-out;
+        }
         .container {
             width: 300px;
-            margin: 100px auto;
+            margin: 50px auto;
             background: white;
             padding: 20px;
             box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
@@ -52,6 +69,9 @@
     </style>
 </head>
 <body>
+
+    <h1 class="title">Welcome to SR Linux App</h1>
+
     <div class="container">
         <h2>Login</h2>
         {% if error %}
@@ -64,5 +84,6 @@
             <button type="submit">Login</button>
         </form>
     </div>
+
 </body>
 </html>
