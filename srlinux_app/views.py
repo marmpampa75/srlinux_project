@@ -10,9 +10,9 @@ import subprocess
 import json
 from django.http import JsonResponse
 from datetime import datetime
+import yaml
 
 def run_containerlab():
-    #run containerlab
     try:
         print(f"cd clab-quickstart/")  # Debugging
         os.chdir('/root/clab-quickstart')  # Change directory
@@ -20,6 +20,15 @@ def run_containerlab():
         subprocess.run(['sudo', 'containerlab', 'deploy'], check=True)
     except Exception as e:
         print(f"Error running containerlab: {e}")
+
+def stop_containerlab():
+    try:
+        print(f"cd clab-quickstart/")  # Debugging
+        os.chdir('/root/clab-quickstart')  # Change directory
+        print(f"sudo containerlab destroy")  # Debugging
+        subprocess.run(["sudo", "containerlab", "destroy"], check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Error destroying container lab: {e}")
 
 def device_list(request):
     devices = Device.objects.all()
@@ -31,18 +40,53 @@ def device_list(request):
     #    docker_output = subprocess.check_output(["docker", "ps", "-a"], text=True)
     #except subprocess.CalledProcessError as e:
     #    docker_output = f"Error executing command: {e}"
-
     return render(request, 'device_list.html', {'devices': devices})
 
-#def add_device(request):
-    #if request.method == 'POST':
-    #    form = DeviceForm(request.POST)
-    #    if form.is_valid():
-    #        form.save()
-    #        return redirect('device_list')
-    #else:
-    #    form = DeviceForm()
-    #return render(request, 'add_device.html', {'form': form})
+###___________________NOT COMPLETED_________________________
+def modify_clab_file(node_name, kind, image, endpoint):
+    try:
+        # Change directory to where the clab file is located
+        print(f"cd clab-quickstart/")
+        os.chdir('/root/clab-quickstart')
+        # Open and load the YAML file
+        clab_file_path = "srlceos01.clab.yml"
+        with open(clab_file_path, "r") as file:
+            data = yaml.safe_load(file)  # Load the YAML data into a Python dictionary
+        # Dynamically add the node to the nodes section
+        if "nodes" not in data:
+            data["nodes"] = {}
+        # Add the dynamic node
+        data["nodes"][node_name] = {
+            "kind": kind,
+            "image": image
+        }
+        # Dynamically modify the links section
+        if "links" not in data:
+            data["links"] = []
+        # Add the new endpoint to all links
+        for link in data["links"]:
+            if "endpoints" in link:
+                link["endpoints"].append(f"{node_name}:{endpoint}")
+        # Save the modified YAML file
+        with open(clab_file_path, "w") as file:
+            yaml.dump(data, file)  # Write the modified data back to the file
+        print(f"YML file '{clab_file_path}' modified successfully with node '{node_name}'.")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+def add_device(request):
+    if request.method == "POST":
+        form = DeviceForm(request.POST)
+        if form.is_valid():
+            device = form.save()
+            stop_containerlab()
+            modify_clab_file(device.name, "nokia_srlinux", "ghcr.io/nokia/srlinux:24.3.3", "e1-1")
+            run_containerlab()
+            return redirect('device_list')  # Redirect to the list page
+    else:
+        form = DeviceForm()
+    
+    return render(request, 'add_device.html', {'form': form})
 
 def device_interfaces(request, device_id):
     device = Device.objects.get(id=device_id)   # Fetch the device object from the database using device_id
@@ -69,19 +113,11 @@ def login_view(request):
     return render(request, 'login.html')
 
 def logout_confirmation(request):
-    return render(request, 'logout_confirmation.html')  
-
+    return render(request, 'logout_confirmation.html') 
 
 def logout_confirmed(request):
     #when logout stop containerlab
-    try:
-        print(f"cd clab-quickstart/")  # Debugging
-        os.chdir('/root/clab-quickstart')  # Change directory
-        print(f"sudo containerlab destroy")  # Debugging
-        subprocess.run(["sudo", "containerlab", "destroy"], check=True)
-    except subprocess.CalledProcessError as e:
-        print(f"Error destroying container lab: {e}")
-
+    stop_containerlab()
     # Log out the user
     logout(request)
     return redirect('login')  # Redirect the user to the login page 
