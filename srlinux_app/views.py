@@ -11,6 +11,8 @@ import json
 from django.http import JsonResponse
 from datetime import datetime
 import yaml
+import time
+
 
 def run_containerlab():
     try:
@@ -30,8 +32,45 @@ def stop_containerlab():
     except subprocess.CalledProcessError as e:
         print(f"Error destroying container lab: {e}")
 
+
+def get_container_ip(device_name):
+    """Fetch the IP address of the container using docker inspect."""
+    try:
+        result = subprocess.run(
+            ["docker", "inspect", device_name], capture_output=True, text=True
+        )
+        if result.returncode == 0:
+            # Print the raw docker inspect output for debugging
+            print(f"docker inspect output for {device_name}:\n{result.stdout}")
+
+            # Parse the JSON output
+            container_info = json.loads(result.stdout)
+            ip_address = container_info[0]["NetworkSettings"]["Networks"]["clab"].get("IPAddress", None)
+            
+            if ip_address:
+                return ip_address
+            else:
+                print(f"No IP address found for {device_name}")
+        else:
+            print(f"Error with docker inspect for {device_name}: {result.stderr}")
+    except Exception as e:
+        print(f"Error fetching IP for {device_name}: {e}")
+    return None
+
 def device_list(request):
     devices = Device.objects.all()
+
+    # Update IP addresses before rendering
+    for device in devices:
+        ip = get_container_ip(device.name)
+        if ip:
+            device.ip_address = ip  # Update the object
+            device.save()  # Save updated IP in the database
+
+    return render(request, 'device_list.html', {'devices': devices})
+
+#def device_list(request):
+    #devices = Device.objects.all()
     # Run "docker ps -a" command
     #try:
     #    print(f"cd clab-quickstart/")  # Debugging
@@ -40,17 +79,16 @@ def device_list(request):
     #    docker_output = subprocess.check_output(["docker", "ps", "-a"], text=True)
     #except subprocess.CalledProcessError as e:
     #    docker_output = f"Error executing command: {e}"
-    return render(request, 'device_list.html', {'devices': devices})
+    #return render(request, 'device_list.html', {'devices': devices})
 
 ###___________________NOT COMPLETED_________________________
-def modify_clab_file(node_name, kind, image, endpoints):
+def modify_clab_file(node_name, kind, image):
     """
     Adds a new node and its links dynamically to the Containerlab YAML file.
 
     :param node_name: Name of the new node (e.g., "srl3")
     :param kind: Node type (e.g., "nokia_srlinux")
     :param image: Docker image for the node
-    :param endpoints: List of links (e.g., [("srl1", "e1-2"), ("srl2", "e1-2")])
     """
     try:
         clab_file_path = "/root/clab-quickstart/srlceos01.clab.yml"
@@ -59,24 +97,18 @@ def modify_clab_file(node_name, kind, image, endpoints):
         with open(clab_file_path, "r") as file:
             data = yaml.safe_load(file) or {}
 
-        # Ensure 'nodes' and 'links' exist
-        data.setdefault("nodes", {})
-        data.setdefault("links", [])
+        # Ensure 'topology' and its subkeys exist
+        data.setdefault("topology", {})
+        data["topology"].setdefault("nodes", {})
+        data["topology"].setdefault("links", [])
 
         # Add the new node if not already present
-        if node_name not in data["nodes"]:
-            data["nodes"][node_name] = {
+        if node_name not in data["topology"]["nodes"]:
+            data["topology"]["nodes"][node_name] = {
                 "kind": kind,
                 "image": image
             }
             print(f"Added node: {node_name}")
-
-        # Add new links dynamically
-        for peer_node, peer_interface in endpoints:
-            link = {"endpoints": [f"{node_name}:{peer_interface}", f"{peer_node}:{peer_interface}"]}
-            if link not in data["links"]:  # Avoid duplicate links
-                data["links"].append(link)
-                print(f"Added link: {node_name}:{peer_interface} <--> {peer_node}:{peer_interface}")
 
         # Save the modified YAML file
         with open(clab_file_path, "w") as file:
@@ -87,20 +119,24 @@ def modify_clab_file(node_name, kind, image, endpoints):
     except Exception as e:
         print(f"Error modifying the YAML file: {e}")
 
+    # Display the modified YAML file contents
+    print("\nUpdated YAML File Content:\n" + "-" * 50)
+    with open(clab_file_path, "r") as file:
+        print(file.read())  # Print the YAML file content
 
 def add_device(request):
     if request.method == "POST":
         form = DeviceForm(request.POST)
         if form.is_valid():
             form.save()  # Save the device to the database of admin page
-            #stop_containerlab()
-            #modify_clab_file(
-            #    node_name=device.name,
-            #    kind="nokia_srlinux",
-            #    image="ghcr.io/nokia/srlinux:24.3.3",
-            #    endpoints=[("srl1", "e1-2"), ("srl2", "e1-2")]  # Define connections
-            #)
-            #run_containerlab()
+            stop_containerlab()
+            modify_clab_file(
+                node_name="srl_TEST",
+                kind="nokia_srlinux",
+                image="ghcr.io/nokia/srlinux:24.3.3"
+            )
+            run_containerlab()
+            time.sleep(5)
             return redirect('device_list')  # Redirect to device_list 
     else:
         form = DeviceForm()
