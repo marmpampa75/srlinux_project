@@ -94,6 +94,56 @@
             max-width: 80%;
             margin: 20px auto;
         }
+        .fab-button-container {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+    }
+
+    .fab-button {
+        width: 60px;
+        height: 60px;
+        background-color: #28a745;
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 30px;
+        color: white;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        position: relative;
+    }
+
+    .fab-button:hover {
+        background-color: #218838;
+    }
+
+    .fab-button:hover .tooltip {
+        visibility: visible;  /* Make tooltip visible on hover */
+        opacity: 1;  /* Tooltip fades in */
+    }
+
+    .tooltip {
+        visibility: hidden;
+        opacity: 0;
+        background-color: rgba(0, 0, 0, 0.7);
+        color: white;
+        text-align: center;
+        border-radius: 4px;
+        padding: 5px 10px;
+        position: absolute;
+        bottom: 70px;  /* Position above the FAB button */
+        transform: translateX(-50%);
+        transition: opacity 0.3s ease;
+        font-size: 14px;
+        white-space: nowrap;
+    }
     </style>
 </head>
 <body>
@@ -102,6 +152,12 @@
     </div>
     <div class="exit-button">
         <a href="{% url 'logout_confirmation' %}" style="color: white; text-decoration: none;">Exit</a>
+    </div>
+    <div class="fab-button-container">
+        <div class="fab-button">
+            <a href="{% url 'add_device' %}" style="color: white; text-decoration: none;">+</a>
+            <div class="tooltip">Add New Device</div>
+        </div>
     </div>
 
     <div class="container">

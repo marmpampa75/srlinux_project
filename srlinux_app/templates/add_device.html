@@ -31,6 +31,20 @@
             border: 1px solid #ddd;
             border-radius: 5px;
         }
+        .show-password {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .show-password input {
+            margin-left: 300px;  /* Moves the checkbox to the right */
+            margin-right: 1px;  /* Adds space between the checkbox and the text */
+        }
+        .buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
         button {
             width: 45%;
             padding: 10px;
@@ -40,8 +54,6 @@
             font-size: 16px;
             border-radius: 5px;
             cursor: pointer;
-            margin: 10px 5px;
-            display: inline-block;
         }
         button:hover {
             background-color: #0056b3;
@@ -52,20 +64,75 @@
         .clear-button:hover {
             background-color: #c82333;
         }
+        .exit-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .exit-button:hover {
+            background-color: #0056b3; /* Darker blue on hover */
+        }
+        .back-link {
+            margin-top: 1px;
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .back-link:hover {
+            background-color: #0056b3;
+        }
     </style>
 </head>
 <body>
+    <div class="exit-button">
+        <a href="{% url 'logout_confirmation' %}" style="color: white; text-decoration: none;">Exit</a>
+    </div>
     <div class="container">
         <h2>Add New Device</h2>
         <form method="post">
             {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit">Save Device</button>
-            <button type="button" class="clear-button" onclick="clearFields()">Clear</button>
+            <label for="id_name">Device Name:</label>
+            {{ form.name }}
+            <div style="display: none;">
+                {{ form.ip_address }}
+            </div>
+            <label for="id_username">Username:</label>
+            {{ form.username }}
+            <label for="id_password">Password:</label>
+            {{ form.password }}
+        
+            <div class="show-password">
+                <input type="checkbox" onclick="showPassword()" checked> <span>Show Password</span>
+            </div>
+            <div class="buttons">
+                <button type="submit">Save</button>
+                <button type="button" class="clear-button" onclick="clearFields()">Clear</button>
+            </div>
         </form>
     </div>
+    <a href="{% url 'device_list' %}" class="back-link">Back to Devices</a>
 
     <script>
+        function showPassword() {
+            var x = document.getElementById("id_password");
+            if (x.type === "password") {
+                x.type = "text";
+            } else {
+                x.type = "password";
+            }
+        }
+
         function clearFields() {
             let inputs = document.querySelectorAll("input[type='text'], input[type='password']");
             inputs.forEach(input => input.value = "");

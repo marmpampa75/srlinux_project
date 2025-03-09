@@ -43,49 +43,68 @@ def device_list(request):
     return render(request, 'device_list.html', {'devices': devices})
 
 ###___________________NOT COMPLETED_________________________
-def modify_clab_file(node_name, kind, image, endpoint):
+def modify_clab_file(node_name, kind, image, endpoints):
+    """
+    Adds a new node and its links dynamically to the Containerlab YAML file.
+
+    :param node_name: Name of the new node (e.g., "srl3")
+    :param kind: Node type (e.g., "nokia_srlinux")
+    :param image: Docker image for the node
+    :param endpoints: List of links (e.g., [("srl1", "e1-2"), ("srl2", "e1-2")])
+    """
     try:
-        # Change directory to where the clab file is located
-        print(f"cd clab-quickstart/")
-        os.chdir('/root/clab-quickstart')
-        # Open and load the YAML file
-        clab_file_path = "srlceos01.clab.yml"
+        clab_file_path = "/root/clab-quickstart/srlceos01.clab.yml"
+
+        # Load existing YAML data
         with open(clab_file_path, "r") as file:
-            data = yaml.safe_load(file)  # Load the YAML data into a Python dictionary
-        # Dynamically add the node to the nodes section
-        if "nodes" not in data:
-            data["nodes"] = {}
-        # Add the dynamic node
-        data["nodes"][node_name] = {
-            "kind": kind,
-            "image": image
-        }
-        # Dynamically modify the links section
-        if "links" not in data:
-            data["links"] = []
-        # Add the new endpoint to all links
-        for link in data["links"]:
-            if "endpoints" in link:
-                link["endpoints"].append(f"{node_name}:{endpoint}")
+            data = yaml.safe_load(file) or {}
+
+        # Ensure 'nodes' and 'links' exist
+        data.setdefault("nodes", {})
+        data.setdefault("links", [])
+
+        # Add the new node if not already present
+        if node_name not in data["nodes"]:
+            data["nodes"][node_name] = {
+                "kind": kind,
+                "image": image
+            }
+            print(f"Added node: {node_name}")
+
+        # Add new links dynamically
+        for peer_node, peer_interface in endpoints:
+            link = {"endpoints": [f"{node_name}:{peer_interface}", f"{peer_node}:{peer_interface}"]}
+            if link not in data["links"]:  # Avoid duplicate links
+                data["links"].append(link)
+                print(f"Added link: {node_name}:{peer_interface} <--> {peer_node}:{peer_interface}")
+
         # Save the modified YAML file
         with open(clab_file_path, "w") as file:
-            yaml.dump(data, file)  # Write the modified data back to the file
-        print(f"YML file '{clab_file_path}' modified successfully with node '{node_name}'.")
+            yaml.dump(data, file, default_flow_style=False)
+
+        print(f"Updated '{clab_file_path}' successfully!")
+
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(f"Error modifying the YAML file: {e}")
+
 
 def add_device(request):
     if request.method == "POST":
         form = DeviceForm(request.POST)
         if form.is_valid():
-            device = form.save()
-            stop_containerlab()
-            modify_clab_file(device.name, "nokia_srlinux", "ghcr.io/nokia/srlinux:24.3.3", "e1-1")
-            run_containerlab()
-            return redirect('device_list')  # Redirect to the list page
+            form.save()  # Save the device to the database of admin page
+            #stop_containerlab()
+            #modify_clab_file(
+            #    node_name=device.name,
+            #    kind="nokia_srlinux",
+            #    image="ghcr.io/nokia/srlinux:24.3.3",
+            #    endpoints=[("srl1", "e1-2"), ("srl2", "e1-2")]  # Define connections
+            #)
+            #run_containerlab()
+            return redirect('device_list')  # Redirect to device_list 
     else:
         form = DeviceForm()
-    
+
     return render(request, 'add_device.html', {'form': form})
 
 def device_interfaces(request, device_id):
