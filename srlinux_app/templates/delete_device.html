@@ -3,8 +3,9 @@
 <head>
     {% load static %}
     <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="{% static 'favicon.ico' %}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Device List</title>
+    <title>Delete device</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -103,17 +104,9 @@
                 <div class="device-item">
                     <span class="device-name">{{ device.name }} ({{ device.ip_address }})</span>
                     <!-- Delete Button for each device -->
-                    <form action="{% url 'confirm_delete' device.id %}" method="post">
-                        <!-------------------------------------------------------------------------------------->
-                        <!-------------------------------------------------------------------------------------->
-                        <!-------------------------------------------------------------------------------------->
-                        <!-------------------------------------------------------------------------------------->
-                        <!-------------------------------------------------------------------------------------->
-                        <!-------------------------------------------------------------------------------------->
-                        <!-------------------------------------------------------------------------------------->
-                        <!-------------------------------------------------------------------------------------->
+                    <form action="{% url 'confirm_delete' device.id %}" method="post" class="delete-form">
                         {% csrf_token %}
-                        <button type="submit" class="delete-button">Delete</button>
+                        <button type="submit" class="delete-button" onclick="return confirmDelete(event)">Delete</button>
                     </form>
                 </div>
             {% empty %}
@@ -124,5 +117,17 @@
     
     <!-- Back Link outside the container -->
     <a href="{% url 'device_list' %}" class="back-link">Back to Devices</a>
+
+    <script>
+        // Confirmation prompt for the delete action
+        function confirmDelete(event) {
+            // Prevent the form from submitting immediately
+            var confirmed = confirm("Are you sure you want to delete this device?");
+            if (!confirmed) {
+                // If the user cancels, prevent form submission
+                event.preventDefault();
+            }
+        }
+    </script>
 </body>
 </html>

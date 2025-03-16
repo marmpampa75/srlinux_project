@@ -109,21 +109,13 @@ def modify_clab_file(node_name, kind, image):
         data["topology"].setdefault("nodes", {})
         data["topology"].setdefault("links", [])
 
-        if delete:
-            # Delete the node if it exists
-            if node_name in data["topology"]["nodes"]:
-                del data["topology"]["nodes"][node_name]
-                print(f"Deleted node: {node_name}")
-            else:
-                print(f"Node '{node_name}' not found in the topology.")
-        else:
-            # Add the new node if not already present
-            if node_name not in data["topology"]["nodes"]:
-                data["topology"]["nodes"][node_name] = {
-                    "kind": kind,
-                    "image": image
-                }
-                print(f"Added node: {node_name}")
+        # Add the new node if not already present
+        if node_name not in data["topology"]["nodes"]:
+            data["topology"]["nodes"][node_name] = {
+                "kind": kind,
+                "image": image
+            }
+            print(f"Added node: {node_name}")
 
         # Save the modified YAML file
         with open(clab_file_path, "w") as file:
@@ -226,8 +218,19 @@ def get_device_uptime(request):
     return JsonResponse(uptime_data)  # Return uptime data as a JSON response
 
 def confirm_delete(request, device_id):
-    device = get_object_or_404(Device, id=device_id)
-    return render(request, 'confirm_delete.html', {'device': device})
+    # Check if the request method is POST (to confirm deletion)
+    if request.method == 'POST':
+        # Get the device to delete using the device_id passed in the URL
+        device = get_object_or_404(Device, id=device_id)
+        
+        # Delete the device
+        device.delete()
+
+        # Redirect to the device list page after deletion
+        return redirect('device_list')  # or whichever URL you want
+
+    # If the request is not POST (e.g., GET), redirect to the device list page or show an error
+    return redirect('device_list')
 
 # Show the delete device page with the list of devices
 def delete_device(request):
