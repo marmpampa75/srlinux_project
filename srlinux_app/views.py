@@ -88,7 +88,7 @@ def device_list(request):
     #    docker_output = f"Error executing command: {e}"
     #return render(request, 'device_list.html', {'devices': devices})
 
-def modify_clab_file(node_name, kind, image):
+def modify_clab_file(delete, node_name, kind, image):
     """
     Adds or deletes a node and its links dynamically to the Containerlab YAML file.
 
@@ -109,13 +109,30 @@ def modify_clab_file(node_name, kind, image):
         data["topology"].setdefault("nodes", {})
         data["topology"].setdefault("links", [])
 
-        # Add the new node if not already present
-        if node_name not in data["topology"]["nodes"]:
-            data["topology"]["nodes"][node_name] = {
-                "kind": kind,
-                "image": image
-            }
-            print(f"Added node: {node_name}")
+        if delete:
+            if node_name in data["topology"]["nodes"]:
+                del data["topology"]["nodes"][node_name]
+                print(f"Deleted node: {node_name}")
+
+                # Remove any links referencing the deleted node
+                new_links = []
+                for link in data["topology"]["links"]:
+                    if not any(node_name in endpoint for endpoint in link["endpoints"]):
+                        new_links.append(link)
+
+                data["topology"]["links"] = new_links  # Update links list
+                print(f"Removed links associated with {node_name}")
+
+            else:
+                print(f"Node '{node_name}' not found. No changes made.")
+        else:
+            # Add the new node if not already present
+            if node_name not in data["topology"]["nodes"]:
+                data["topology"]["nodes"][node_name] = {
+                    "kind": kind,
+                    "image": image
+                }
+                print(f"Added node: {node_name}")
 
         # Save the modified YAML file
         with open(clab_file_path, "w") as file:
@@ -139,6 +156,7 @@ def add_device(request):
             device_name = form.cleaned_data["name"]  # Get the name from the form
             stop_containerlab()
             modify_clab_file(
+                delete=False,
                 node_name=device_name,  # Use the user-provided name
                 kind="nokia_srlinux",
                 image="ghcr.io/nokia/srlinux:24.3.3"
@@ -222,9 +240,19 @@ def confirm_delete(request, device_id):
     if request.method == 'POST':
         # Get the device to delete using the device_id passed in the URL
         device = get_object_or_404(Device, id=device_id)
-        
+        device_name = device.name
+
         # Delete the device
         device.delete()
+        stop_containerlab()
+        modify_clab_file(
+            delete=True,
+            node_name=device_name,
+            kind="nokia_srlinux",
+            image="ghcr.io/nokia/srlinux:24.3.3"
+        )
+        run_containerlab()
+        time.sleep(5)
 
         # Redirect to the device list page after deletion
         return redirect('device_list')  # or whichever URL you want
