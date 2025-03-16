@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Device List</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 400px;
+            margin: 50px auto;
+            background: white;
+            padding: 20px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        h1 {
+            color: #333;
+        }
+        .device-list {
+            margin-top: 20px;
+            text-align: left;
+            max-width: 100%;
+        }
+        .device-item {
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 8px;
+        }
+        .device-name {
+            font-size: 16px;
+        }
+        .delete-button-container {
+            display: flex;
+            justify-content: flex-end;
+        }
+        .delete-button {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .delete-button:hover {
+            background-color: #c82333;
+        }
+        .exit-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .exit-button:hover {
+            background-color: #0056b3; /* Darker blue on hover */
+        }
+        .back-link {
+            margin-top: 20px;
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            position: relative;
+            top: 30px; /* Moves it outside the container */
+        }
+        .back-link:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="exit-button">
+        <a href="{% url 'logout_confirmation' %}" style="color: white; text-decoration: none;">Exit</a>
+    </div>
+    <div class="container">
+        <h1>Device List</h1>
+        
+        <!-- Device List Display -->
+        <div class="device-list">
+            {% for device in devices %}
+                <div class="device-item">
+                    <span class="device-name">{{ device.name }} ({{ device.ip_address }})</span>
+                    <!-- Delete Button for each device -->
+                    <form action="{% url 'confirm_delete' device.id %}" method="post">
+                        <!-------------------------------------------------------------------------------------->
+                        <!-------------------------------------------------------------------------------------->
+                        <!-------------------------------------------------------------------------------------->
+                        <!-------------------------------------------------------------------------------------->
+                        <!-------------------------------------------------------------------------------------->
+                        <!-------------------------------------------------------------------------------------->
+                        <!-------------------------------------------------------------------------------------->
+                        <!-------------------------------------------------------------------------------------->
+                        {% csrf_token %}
+                        <button type="submit" class="delete-button">Delete</button>
+                    </form>
+                </div>
+            {% empty %}
+                <p>No devices found.</p>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Back Link outside the container -->
+    <a href="{% url 'device_list' %}" class="back-link">Back to Devices</a>
+</body>
+</html>

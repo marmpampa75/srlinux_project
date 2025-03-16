@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.shortcuts import redirect
+from django.shortcuts import get_object_or_404
 from .models import Device
 from .forms import DeviceForm
 from .netmiko_handler import get_device_interfaces
@@ -36,9 +37,14 @@ def stop_containerlab():
 def get_container_ip(device_name):
     """Fetch the IP address of the container using docker inspect."""
     try:
+        # Ensure the device name includes the prefix
+        if not device_name.startswith("clab-srlceos01-"):
+            device_name = "clab-srlceos01-" + device_name
+
         result = subprocess.run(
             ["docker", "inspect", device_name], capture_output=True, text=True
         )
+        
         if result.returncode == 0:
             # Print the raw docker inspect output for debugging
             print(f"docker inspect output for {device_name}:\n{result.stdout}")
@@ -56,6 +62,7 @@ def get_container_ip(device_name):
     except Exception as e:
         print(f"Error fetching IP for {device_name}: {e}")
     return None
+
 
 def device_list(request):
     devices = Device.objects.all()
@@ -81,14 +88,14 @@ def device_list(request):
     #    docker_output = f"Error executing command: {e}"
     #return render(request, 'device_list.html', {'devices': devices})
 
-###___________________NOT COMPLETED_________________________
 def modify_clab_file(node_name, kind, image):
     """
-    Adds a new node and its links dynamically to the Containerlab YAML file.
+    Adds or deletes a node and its links dynamically to the Containerlab YAML file.
 
     :param node_name: Name of the new node (e.g., "srl3")
     :param kind: Node type (e.g., "nokia_srlinux")
     :param image: Docker image for the node
+    :param delete: Boolean flag to indicate if the node should be deleted
     """
     try:
         clab_file_path = "/root/clab-quickstart/srlceos01.clab.yml"
@@ -102,13 +109,21 @@ def modify_clab_file(node_name, kind, image):
         data["topology"].setdefault("nodes", {})
         data["topology"].setdefault("links", [])
 
-        # Add the new node if not already present
-        if node_name not in data["topology"]["nodes"]:
-            data["topology"]["nodes"][node_name] = {
-                "kind": kind,
-                "image": image
-            }
-            print(f"Added node: {node_name}")
+        if delete:
+            # Delete the node if it exists
+            if node_name in data["topology"]["nodes"]:
+                del data["topology"]["nodes"][node_name]
+                print(f"Deleted node: {node_name}")
+            else:
+                print(f"Node '{node_name}' not found in the topology.")
+        else:
+            # Add the new node if not already present
+            if node_name not in data["topology"]["nodes"]:
+                data["topology"]["nodes"][node_name] = {
+                    "kind": kind,
+                    "image": image
+                }
+                print(f"Added node: {node_name}")
 
         # Save the modified YAML file
         with open(clab_file_path, "w") as file:
@@ -129,9 +144,10 @@ def add_device(request):
         form = DeviceForm(request.POST)
         if form.is_valid():
             form.save()  # Save the device to the database of admin page
+            device_name = form.cleaned_data["name"]  # Get the name from the form
             stop_containerlab()
             modify_clab_file(
-                node_name="srl_TEST",
+                node_name=device_name,  # Use the user-provided name
                 kind="nokia_srlinux",
                 image="ghcr.io/nokia/srlinux:24.3.3"
             )
@@ -183,22 +199,37 @@ def get_device_uptime(request):
 
     for device in devices:
         try:
+            # Ensure the device name includes the prefix
+            if not device.name.startswith("clab-srlceos01-"):
+                device_name = "clab-srlceos01-" + device.name
+            else:
+                device_name = device.name
+
             # Run 'docker inspect' to get uptime for the container
             output = subprocess.check_output(
-                ["docker", "inspect", "-f", "{{.State.StartedAt}}", device.name],
+                ["docker", "inspect", "-f", "{{.State.StartedAt}}", device_name],
                 text=True
             ).strip()
 
             # Convert timestamp to seconds 
-            #Example: "2024-02-17T12:34:56.123456789Z" (take the first 19 characters)
+            # Example: "2024-02-17T12:34:56.123456789Z" (take the first 19 characters)
             started_at = datetime.strptime(output[:19], "%Y-%m-%dT%H:%M:%S")
             #[current UTC time]-[start time] 
             uptime_seconds = (datetime.utcnow() - started_at).total_seconds()
 
-            #Store in dictionary
+            # Store in dictionary
             uptime_data[device.name] = int(uptime_seconds)
         
         except subprocess.CalledProcessError:
             uptime_data[device.name] = 0  # If the device is not running, uptime is 0
 
-    return JsonResponse(uptime_data)    # Return uptime data as a JSON response
+    return JsonResponse(uptime_data)  # Return uptime data as a JSON response
+
+def confirm_delete(request, device_id):
+    device = get_object_or_404(Device, id=device_id)
+    return render(request, 'confirm_delete.html', {'device': device})
+
+# Show the delete device page with the list of devices
+def delete_device(request):
+    devices = Device.objects.all()
+    return render(request, 'delete_device.html', {'devices': devices})

@@ -144,6 +144,59 @@
         font-size: 14px;
         white-space: nowrap;
     }
+
+    /* Red button for deletion */
+    .delete-button-container {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;  
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    }
+
+    .delete-button {
+        width: 60px;
+        height: 60px;
+        background-color: #dc3545; /* Red */
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 30px;
+        color: white;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        position: relative;
+    }
+
+    .delete-button:hover {
+        background-color: #c82333;
+    }
+    
+    .delete-button:hover .tooltip-delete-device {
+        visibility: visible;
+        opacity: 1;
+    }
+
+    .tooltip-delete-device {
+    visibility: hidden;
+    opacity: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    text-align: center;
+    border-radius: 4px;
+    padding: 5px 10px;
+    position: absolute;
+    bottom: 70px;  /* Position above the delete button */
+    left: 30px;    /* Adjust to move the tooltip to the right */
+    transition: opacity 0.3s ease;
+    font-size: 14px;
+    white-space: nowrap;
+    }
+    
     </style>
 </head>
 <body>
@@ -157,6 +210,12 @@
         <div class="fab-button">
             <a href="{% url 'add_device' %}" style="color: white; text-decoration: none;">+</a>
             <div class="tooltip">Add New Device</div>
+        </div>
+    </div>
+    <div class="delete-button-container">
+        <div class="delete-button">
+            <a href="{% url 'delete_device' %}" style="color: white; text-decoration: none;">-</a>
+            <div class="tooltip-delete-device">Delete Device</div>
         </div>
     </div>
 

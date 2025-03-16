@@ -14,7 +14,7 @@ def get_device_interfaces(ip, username, password):
         # Establish SSH connection
         connection = ConnectHandler(**device)
         # Increase the read_timeout after connection is established
-        connection.read_timeout = 240  # Adjust as needed
+        connection.read_timeout = 360  # Adjust as needed
         # Execute the command
         output = connection.send_command("show interface")
         # Close the connection
